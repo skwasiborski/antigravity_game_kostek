@@ -17,11 +17,8 @@
             --glass-hover: rgba(30, 41, 59, 0.8);
         }
 
-        html, body {
+        body {
             margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
             overflow: hidden;
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -31,8 +28,8 @@
 
         #gameCanvas {
             display: block;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             touch-action: none;
         }
 
@@ -467,6 +464,10 @@
             // Provide fallbacks so width/height are never 0 during initial iOS load
             width = canvas.width = window.innerWidth || document.documentElement.clientWidth || 320;
             height = canvas.height = window.innerHeight || document.documentElement.clientHeight || 480;
+            
+            // Explicitly set the CSS style to match internal pixels exactly to prevent Safari from squishing orbs
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
             
             // Ensure baseScale is strictly positive so we never divide by zero
             baseScale = Math.max(0.1, Math.min(width, height) / 800);
