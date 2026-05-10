@@ -1,11 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orbit Eater</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
         :root {
             --bg-color: #0f172a;
             --text-color: #f8fafc;
@@ -271,79 +263,16 @@
         #game-over-screen { display: none; }
         #settings-screen { display: none; }
         #level-up-screen { display: none; }
-    </style>
-</head>
-<body>
-    <canvas id="gameCanvas"></canvas>
     
-    <div class="ui-layer">
-        <div class="hud" id="hud" style="opacity: 0; transition: opacity 0.5s;">
-            <div class="glass-panel score-container">
-                <span class="label">Score</span>
-                <span class="value" id="score">0</span>
-            </div>
-            <div class="glass-panel score-container">
-                <span class="label">Level</span>
-                <span class="value" id="level">1</span>
-            </div>
-            <div class="glass-panel lives-container">
-                <span class="label">Lives</span>
-                <span class="lives-value" id="lives">
-                    <!-- Hearts added via JS -->
-                </span>
-            </div>
-        </div>
-    </div>
 
-    <div id="start-screen" class="overlay active">
-        <div class="glass-panel overlay-content">
-            <h1>Orbit Eater</h1>
-            <p>Eat smaller orbs. Avoid larger ones.</p>
-            <button id="start-btn">Start Playing</button>
-            <button id="settings-btn" class="secondary">Settings</button>
-        </div>
-    </div>
 
-    <div id="settings-screen" class="overlay">
-        <div class="glass-panel overlay-content">
-            <h2>Customization</h2>
             
-            <canvas id="previewCanvas" width="150" height="150" style="margin: 0 auto 1.5rem auto; display: block;"></canvas>
             
-            <div class="settings-section">
-                <h3>Style</h3>
-                <div class="style-options" id="style-options">
-                    <!-- Added via JS -->
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h3>Color</h3>
-                <div class="color-options" id="color-options">
-                    <!-- Added via JS -->
-                </div>
-            </div>
 
-            <button id="close-settings-btn">Save & Close</button>
-        </div>
-    </div>
 
-    <div id="game-over-screen" class="overlay">
-        <div class="glass-panel overlay-content">
-            <h1>Game Over</h1>
-            <p>Final Score: <span id="final-score">0</span></p>
-            <button id="restart-btn">Play Again</button>
-        </div>
-    </div>
 
-    <div id="level-up-screen" class="overlay">
-        <div class="glass-panel overlay-content">
-            <h1 style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">LEVEL UP!</h1>
-            <p>Get ready for faster enemies...</p>
-        </div>
-    </div>
 
-    <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d', { alpha: false });
         
@@ -464,12 +393,10 @@
         }
 
         function resize() {
-            // Provide fallbacks so width/height are never 0 during initial iOS load
-            width = canvas.width = window.innerWidth || document.documentElement.clientWidth || 320;
-            height = canvas.height = window.innerHeight || document.documentElement.clientHeight || 480;
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
             
-            // Ensure baseScale is strictly positive so we never divide by zero
-            baseScale = Math.max(0.1, Math.min(width, height) / 800);
+            baseScale = Math.min(width, height) / 800;
             PLAYER_INITIAL_RADIUS = 20 * baseScale;
             LEVEL_UP_RADIUS = 250 * baseScale;
             
@@ -572,7 +499,6 @@
             initPlayer();
             
             enemies = [];
-            for (let i = 0; i < MAX_ENEMIES; i++) {
                 spawnEnemy();
             }
             
@@ -597,8 +523,6 @@
         function updateHUD() {
             scoreElement.innerText = Math.floor(player.score);
             let heartsHTML = '';
-            for (let i = 0; i < player.lives; i++) {
-                heartsHTML += '<span class="heart">♥</span>';
             }
             livesElement.innerHTML = heartsHTML;
         }
@@ -616,26 +540,22 @@
             } else {
                 // Mix of sizes, scaled around current player size
                 const rand = Math.random();
-                if (rand < 0.6) {
                     radius = Math.random() * (player.radius - 5 * baseScale) + (5 * baseScale); // Smaller
-                } else if (rand < 0.9) {
                     radius = player.radius + Math.random() * (20 * baseScale) + (5 * baseScale); // Slightly larger
                 } else {
                     radius = player.radius + Math.random() * (50 * baseScale) + (20 * baseScale); // Much larger
                 }
             }
             
-            radius = Math.max(1, Math.max(5 * baseScale, radius)); // Strictly positive min radius
+            radius = Math.max(5 * baseScale, radius); // Min radius
 
             let x, y;
             // Spawn outside player safe zone
             do {
                 x = Math.random() * width;
                 y = Math.random() * height;
-            } while (Math.hypot(x - player.x, y - player.y) < player.radius + radius + (100 * baseScale));
 
-            // Prevent NaN by ensuring radius is not 0
-            const baseSpeed = (Math.random() * 2 + 0.5) * ((30 * baseScale) / radius); 
+            const baseSpeed = (Math.random() * 2 + 0.5) * ((30 * baseScale) / radius); // Smaller = faster
             const speed = baseSpeed * (1 + (currentLevel - 1) * 0.2); // +20% speed per level
             const angle = Math.random() * Math.PI * 2;
 
@@ -652,12 +572,11 @@
         function spawnPowerup() {
             if (powerups.length > 0) return; // Only one at a time
             
-            const radius = Math.max(1, 15 * baseScale); // strictly positive
+            const radius = 15 * baseScale; // smaller than player's initial 20 so they can eat it right away
             let x, y;
             do {
                 x = Math.random() * width;
                 y = Math.random() * height;
-            } while (Math.hypot(x - player.x, y - player.y) < player.radius + radius + (100 * baseScale));
 
             const speed = 4 * baseScale;
             const angle = Math.random() * Math.PI * 2;
@@ -736,7 +655,6 @@
             }
 
             // Occasional powerup spawn
-            if (Math.random() < 0.001) { // roughly every 16 seconds
                 spawnPowerup();
             }
 
@@ -744,7 +662,6 @@
             for (let i = powerups.length - 1; i >= 0; i--) {
                 const p = powerups[i];
                 p.timeToLive--;
-                if (p.timeToLive <= 0) {
                     powerups.splice(i, 1);
                     continue;
                 }
@@ -754,18 +671,15 @@
                 p.y += p.velocity.y;
                 
                 // Bounce off walls
-                if (p.x - p.radius < 0 || p.x + p.radius > width) {
                     p.velocity.x *= -1;
                     p.x = Math.max(p.radius, Math.min(width - p.radius, p.x));
                 }
-                if (p.y - p.radius < 0 || p.y + p.radius > height) {
                     p.velocity.y *= -1;
                     p.y = Math.max(p.radius, Math.min(height - p.radius, p.y));
                 }
                 
                 // Collision with player
                 const distToPlayer = Math.hypot(player.x - p.x, player.y - p.y);
-                if (distToPlayer < player.radius + p.radius) {
                     if (player.radius > p.radius) {
                         // Eat powerup
                         player.powerupTime = 300; // 5 seconds
@@ -780,13 +694,10 @@
             }
 
             // Ensure there are always smaller balls to eat
-            let smallerCount = enemies.filter(e => e.radius < player.radius).length;
-            if (smallerCount < 10 && enemies.length < MAX_ENEMIES + 10) {
                 spawnEnemy('small');
             }
 
             // Maintain max enemies
-            while (enemies.length < MAX_ENEMIES) {
                 spawnEnemy();
             }
 
@@ -797,18 +708,15 @@
                 enemy.y += enemy.velocity.y;
 
                 // Bounce off walls
-                if (enemy.x - enemy.radius < 0 || enemy.x + enemy.radius > width) {
                     enemy.velocity.x *= -1;
                     enemy.x = Math.max(enemy.radius, Math.min(width - enemy.radius, enemy.x));
                 }
-                if (enemy.y - enemy.radius < 0 || enemy.y + enemy.radius > height) {
                     enemy.velocity.y *= -1;
                     enemy.y = Math.max(enemy.radius, Math.min(height - enemy.radius, enemy.y));
                 }
 
                 // Collision detection
                 const distToPlayer = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-                if (distToPlayer < player.radius + enemy.radius) {
                     if (player.powerupTime > 0 || player.radius > enemy.radius * 1.05) { // Need to be 5% bigger to eat safely
                         // Eat enemy
                         const playerArea = Math.PI * player.radius * player.radius;
@@ -817,11 +725,9 @@
                         player.score += Math.floor(enemy.radius);
                         enemies.splice(i, 1);
                         updateHUD();
-                    } else if (enemy.radius > player.radius * 1.05 && player.invulnerableTime <= 0) {
                         // Eaten by enemy
                         player.lives--;
                         updateHUD();
-                        if (player.lives <= 0) {
                             gameOver();
                         } else {
                             initPlayer();
@@ -853,7 +759,6 @@
             // Hide overlay, spawn new enemies, and resume playing.
             setTimeout(() => {
                 enemies = [];
-                for (let i = 0; i < MAX_ENEMIES; i++) {
                     spawnEnemy();
                 }
                 
@@ -879,11 +784,9 @@
             ctx.lineWidth = 1;
 
             ctx.beginPath();
-            for (let x = -offsetX; x < width; x += gridSize) {
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, height);
             }
-            for (let y = -offsetY; y < height; y += gridSize) {
                 ctx.moveTo(0, y);
                 ctx.lineTo(width, y);
             }
@@ -905,7 +808,6 @@
                 const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
                 const proximityThreshold = player.radius + enemy.radius + 150;
                 
-                if (dist < proximityThreshold) {
                     if (enemy.radius > player.radius * 1.05) {
                         ctx.shadowBlur = 40;
                         ctx.shadowColor = '#ef4444'; // Red
@@ -1083,6 +985,3 @@
         if (!animationId) {
             loop(); // Start loop immediately to render background and settings preview
         }
-    </script>
-</body>
-</html>

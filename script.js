@@ -1,349 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orbit Eater</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --text-color: #f8fafc;
-            --accent-color: #38bdf8;
-            --accent-hover: #0284c7;
-            --danger-color: #ef4444;
-            --glass-bg: rgba(15, 23, 42, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-hover: rgba(30, 41, 59, 0.8);
-        }
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Outfit', sans-serif;
-            user-select: none;
-        }
-
-        #gameCanvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            touch-action: none;
-        }
-
-        .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 2rem;
-            box-sizing: border-box;
-        }
-
-        .hud {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 1rem 1.5rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        .score-container, .lives-container {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .label {
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #94a3b8;
-            font-weight: 600;
-        }
-
-        .value {
-            font-size: 2rem;
-            font-weight: 800;
-            line-height: 1;
-        }
-
-        .lives-value {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .heart {
-            color: var(--danger-color);
-            font-size: 1.5rem;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            pointer-events: auto;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            z-index: 10;
-        }
-
-        .overlay.active {
-            opacity: 1;
-        }
-
-        .overlay-content {
-            text-align: center;
-            transform: translateY(20px);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-width: 600px;
-            width: 90%;
-        }
-
-        .overlay.active .overlay-content {
-            transform: translateY(0);
-        }
-
-        h1 {
-            font-size: 4rem;
-            margin: 0 0 0.5rem 0;
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
-        }
-
-        h2 {
-            font-size: 2.5rem;
-            margin: 0 0 1.5rem 0;
-            color: white;
-        }
-
-        p {
-            font-size: 1.25rem;
-            color: #94a3b8;
-            margin-bottom: 2rem;
-        }
-
-        button {
-            background: linear-gradient(135deg, var(--accent-color), #0ea5e9);
-            color: white;
-            border: none;
-            padding: 1rem 2.5rem;
-            font-size: 1.125rem;
-            font-weight: 600;
-            font-family: 'Outfit', sans-serif;
-            border-radius: 9999px;
-            cursor: pointer;
-            box-shadow: 0 4px 14px 0 rgba(56, 189, 248, 0.39);
-            transition: all 0.2s ease;
-            pointer-events: auto;
-            margin: 0.5rem;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
-            background: linear-gradient(135deg, #7dd3fc, var(--accent-color));
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        button.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: none;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        button.secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.2);
-        }
-
-        /* Settings UI */
-        .settings-section {
-            margin-bottom: 2rem;
-            text-align: left;
-        }
-
-        .settings-section h3 {
-            font-size: 1.1rem;
-            color: #94a3b8;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .style-options {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .style-card {
-            background: var(--glass-bg);
-            border: 2px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            flex: 1;
-            min-width: 100px;
-            text-align: center;
-            font-weight: 600;
-            color: #cbd5e1;
-        }
-
-        .style-card:hover {
-            background: var(--glass-hover);
-        }
-
-        .style-card.selected {
-            border-color: var(--accent-color);
-            background: rgba(56, 189, 248, 0.1);
-            color: white;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
-        }
-
-        .color-options {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .color-swatch {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 3px solid transparent;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .color-swatch:hover {
-            transform: scale(1.1);
-        }
-
-        .color-swatch.selected {
-            border-color: white;
-            transform: scale(1.15);
-        }
-
-        #start-screen { display: flex; }
-        #game-over-screen { display: none; }
-        #settings-screen { display: none; }
-        #level-up-screen { display: none; }
-    </style>
-</head>
-<body>
-    <canvas id="gameCanvas"></canvas>
-    
-    <div class="ui-layer">
-        <div class="hud" id="hud" style="opacity: 0; transition: opacity 0.5s;">
-            <div class="glass-panel score-container">
-                <span class="label">Score</span>
-                <span class="value" id="score">0</span>
-            </div>
-            <div class="glass-panel score-container">
-                <span class="label">Level</span>
-                <span class="value" id="level">1</span>
-            </div>
-            <div class="glass-panel lives-container">
-                <span class="label">Lives</span>
-                <span class="lives-value" id="lives">
-                    <!-- Hearts added via JS -->
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <div id="start-screen" class="overlay active">
-        <div class="glass-panel overlay-content">
-            <h1>Orbit Eater</h1>
-            <p>Eat smaller orbs. Avoid larger ones.</p>
-            <button id="start-btn">Start Playing</button>
-            <button id="settings-btn" class="secondary">Settings</button>
-        </div>
-    </div>
-
-    <div id="settings-screen" class="overlay">
-        <div class="glass-panel overlay-content">
-            <h2>Customization</h2>
-            
-            <canvas id="previewCanvas" width="150" height="150" style="margin: 0 auto 1.5rem auto; display: block;"></canvas>
-            
-            <div class="settings-section">
-                <h3>Style</h3>
-                <div class="style-options" id="style-options">
-                    <!-- Added via JS -->
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h3>Color</h3>
-                <div class="color-options" id="color-options">
-                    <!-- Added via JS -->
-                </div>
-            </div>
-
-            <button id="close-settings-btn">Save & Close</button>
-        </div>
-    </div>
-
-    <div id="game-over-screen" class="overlay">
-        <div class="glass-panel overlay-content">
-            <h1>Game Over</h1>
-            <p>Final Score: <span id="final-score">0</span></p>
-            <button id="restart-btn">Play Again</button>
-        </div>
-    </div>
-
-    <div id="level-up-screen" class="overlay">
-        <div class="glass-panel overlay-content">
-            <h1 style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">LEVEL UP!</h1>
-            <p>Get ready for faster enemies...</p>
-        </div>
-    </div>
-
-    <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d', { alpha: false });
         
@@ -464,12 +119,10 @@
         }
 
         function resize() {
-            // Provide fallbacks so width/height are never 0 during initial iOS load
-            width = canvas.width = window.innerWidth || document.documentElement.clientWidth || 320;
-            height = canvas.height = window.innerHeight || document.documentElement.clientHeight || 480;
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
             
-            // Ensure baseScale is strictly positive so we never divide by zero
-            baseScale = Math.max(0.1, Math.min(width, height) / 800);
+            baseScale = Math.min(width, height) / 800;
             PLAYER_INITIAL_RADIUS = 20 * baseScale;
             LEVEL_UP_RADIUS = 250 * baseScale;
             
@@ -625,7 +278,7 @@
                 }
             }
             
-            radius = Math.max(1, Math.max(5 * baseScale, radius)); // Strictly positive min radius
+            radius = Math.max(5 * baseScale, radius); // Min radius
 
             let x, y;
             // Spawn outside player safe zone
@@ -634,8 +287,7 @@
                 y = Math.random() * height;
             } while (Math.hypot(x - player.x, y - player.y) < player.radius + radius + (100 * baseScale));
 
-            // Prevent NaN by ensuring radius is not 0
-            const baseSpeed = (Math.random() * 2 + 0.5) * ((30 * baseScale) / radius); 
+            const baseSpeed = (Math.random() * 2 + 0.5) * ((30 * baseScale) / radius); // Smaller = faster
             const speed = baseSpeed * (1 + (currentLevel - 1) * 0.2); // +20% speed per level
             const angle = Math.random() * Math.PI * 2;
 
@@ -652,7 +304,7 @@
         function spawnPowerup() {
             if (powerups.length > 0) return; // Only one at a time
             
-            const radius = Math.max(1, 15 * baseScale); // strictly positive
+            const radius = 15 * baseScale; // smaller than player's initial 20 so they can eat it right away
             let x, y;
             do {
                 x = Math.random() * width;
@@ -1083,6 +735,4 @@
         if (!animationId) {
             loop(); // Start loop immediately to render background and settings preview
         }
-    </script>
-</body>
-</html>
+    
