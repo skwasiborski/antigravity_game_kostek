@@ -30,6 +30,7 @@
             display: block;
             width: 100vw;
             height: 100vh;
+            touch-action: none;
         }
 
         .ui-layer {
@@ -472,6 +473,18 @@
             mouse.x = e.clientX;
             mouse.y = e.clientY;
         });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+        }, { passive: false });
 
         startBtn.addEventListener('click', startGame);
         restartBtn.addEventListener('click', startGame);
