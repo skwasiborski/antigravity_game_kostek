@@ -17,8 +17,11 @@
             --glass-hover: rgba(30, 41, 59, 0.8);
         }
 
-        body {
+        html, body {
             margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -28,8 +31,8 @@
 
         #gameCanvas {
             display: block;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             touch-action: none;
         }
 
@@ -395,7 +398,9 @@
         const styles = ['Sun', 'Neon', 'Classic', 'Target'];
 
         // Player config
-        const PLAYER_INITIAL_RADIUS = 20;
+        let baseScale = 1;
+        let PLAYER_INITIAL_RADIUS = 20;
+        let LEVEL_UP_RADIUS = 250;
         const INITIAL_LIVES = 3;
         
         let player = {
@@ -461,9 +466,16 @@
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
+            
+            baseScale = Math.min(width, height) / 800;
+            PLAYER_INITIAL_RADIUS = 20 * baseScale;
+            LEVEL_UP_RADIUS = 250 * baseScale;
+            
             if (gameState === 'START' || gameState === 'SETTINGS') {
                 player.x = width / 2;
                 player.y = height / 2;
+                player.radius = PLAYER_INITIAL_RADIUS;
+                player.targetRadius = PLAYER_INITIAL_RADIUS;
             }
         }
 
@@ -474,16 +486,36 @@
             mouse.y = e.clientY;
         });
 
+        let touchStartX = 0;
+        let touchStartY = 0;
+
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            mouse.x = e.touches[0].clientX;
-            mouse.y = e.touches[0].clientY;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            
+            // Snap target to player so they don't jump around, acting like a virtual joystick
+            mouse.x = player.x;
+            mouse.y = player.y;
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            mouse.x = e.touches[0].clientX;
-            mouse.y = e.touches[0].clientY;
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            
+            const dx = currentX - touchStartX;
+            const dy = currentY - touchStartY;
+            
+            mouse.x += dx * 1.5; // Multiply drag by 1.5 for better sensitivity on mobile
+            mouse.y += dy * 1.5;
+            
+            // Keep virtual target bounded
+            mouse.x = Math.max(0, Math.min(width, mouse.x));
+            mouse.y = Math.max(0, Math.min(height, mouse.y));
+            
+            touchStartX = currentX;
+            touchStartY = currentY;
         }, { passive: false });
 
         startBtn.addEventListener('click', startGame);
@@ -576,31 +608,31 @@
         function spawnEnemy(forceSize = null) {
             let radius;
             if (forceSize === 'small') {
-                radius = Math.random() * (player.radius * 0.8) + 5;
+                radius = Math.random() * (player.radius * 0.8) + (5 * baseScale);
             } else if (forceSize === 'large') {
-                radius = player.radius + Math.random() * 30 + 10;
+                radius = player.radius + Math.random() * (30 * baseScale) + (10 * baseScale);
             } else {
                 // Mix of sizes, scaled around current player size
                 const rand = Math.random();
                 if (rand < 0.6) {
-                    radius = Math.random() * (player.radius - 5) + 5; // Smaller
+                    radius = Math.random() * (player.radius - 5 * baseScale) + (5 * baseScale); // Smaller
                 } else if (rand < 0.9) {
-                    radius = player.radius + Math.random() * 20 + 5; // Slightly larger
+                    radius = player.radius + Math.random() * (20 * baseScale) + (5 * baseScale); // Slightly larger
                 } else {
-                    radius = player.radius + Math.random() * 50 + 20; // Much larger
+                    radius = player.radius + Math.random() * (50 * baseScale) + (20 * baseScale); // Much larger
                 }
             }
             
-            radius = Math.max(5, radius); // Min radius
+            radius = Math.max(5 * baseScale, radius); // Min radius
 
             let x, y;
             // Spawn outside player safe zone
             do {
                 x = Math.random() * width;
                 y = Math.random() * height;
-            } while (Math.hypot(x - player.x, y - player.y) < player.radius + radius + 100);
+            } while (Math.hypot(x - player.x, y - player.y) < player.radius + radius + (100 * baseScale));
 
-            const baseSpeed = (Math.random() * 2 + 0.5) * (30 / radius); // Smaller = faster
+            const baseSpeed = (Math.random() * 2 + 0.5) * ((30 * baseScale) / radius); // Smaller = faster
             const speed = baseSpeed * (1 + (currentLevel - 1) * 0.2); // +20% speed per level
             const angle = Math.random() * Math.PI * 2;
 
@@ -617,14 +649,14 @@
         function spawnPowerup() {
             if (powerups.length > 0) return; // Only one at a time
             
-            const radius = 15; // smaller than player's initial 20 so they can eat it right away
+            const radius = 15 * baseScale; // smaller than player's initial 20 so they can eat it right away
             let x, y;
             do {
                 x = Math.random() * width;
                 y = Math.random() * height;
-            } while (Math.hypot(x - player.x, y - player.y) < player.radius + radius + 100);
+            } while (Math.hypot(x - player.x, y - player.y) < player.radius + radius + (100 * baseScale));
 
-            const speed = 4;
+            const speed = 4 * baseScale;
             const angle = Math.random() * Math.PI * 2;
 
             powerups.push({
@@ -796,7 +828,7 @@
             }
             
             // Check Level Up
-            if (player.radius >= 250) {
+            if (player.radius >= LEVEL_UP_RADIUS) {
                 levelUp();
             }
         }
