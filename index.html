@@ -473,6 +473,7 @@
             baseScale = Math.max(0.1, Math.min(width, height) / 800);
             PLAYER_INITIAL_RADIUS = 20 * baseScale;
             LEVEL_UP_RADIUS = 250 * baseScale;
+            player.speed = 15 * baseScale;
             
             if (gameState === 'START' || gameState === 'SETTINGS') {
                 player.x = width / 2;
@@ -489,36 +490,28 @@
             mouse.y = e.clientY;
         });
 
-        let touchStartX = 0;
-        let touchStartY = 0;
+        let touchOffsetX = 0;
+        let touchOffsetY = 0;
 
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
+            // Calculate the exact offset between the finger and the player when first touching
+            touchOffsetX = player.x - e.touches[0].clientX;
+            touchOffsetY = player.y - e.touches[0].clientY;
             
-            // Snap target to player so they don't jump around, acting like a virtual joystick
-            mouse.x = player.x;
-            mouse.y = player.y;
+            mouse.x = e.touches[0].clientX + touchOffsetX;
+            mouse.y = e.touches[0].clientY + touchOffsetY;
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            const currentX = e.touches[0].clientX;
-            const currentY = e.touches[0].clientY;
-            
-            const dx = currentX - touchStartX;
-            const dy = currentY - touchStartY;
-            
-            mouse.x += dx * 1.5; // Multiply drag by 1.5 for better sensitivity on mobile
-            mouse.y += dy * 1.5;
+            // Maintain the exact offset so the orb never drifts from the relative finger position
+            mouse.x = e.touches[0].clientX + touchOffsetX;
+            mouse.y = e.touches[0].clientY + touchOffsetY;
             
             // Keep virtual target bounded
             mouse.x = Math.max(0, Math.min(width, mouse.x));
             mouse.y = Math.max(0, Math.min(height, mouse.y));
-            
-            touchStartX = currentX;
-            touchStartY = currentY;
         }, { passive: false });
 
         startBtn.addEventListener('click', startGame);
@@ -637,7 +630,7 @@
 
             // Prevent NaN by ensuring radius is not 0
             const baseSpeed = (Math.random() * 2 + 0.5) * ((30 * baseScale) / radius); 
-            const speed = baseSpeed * (1 + (currentLevel - 1) * 0.2); // +20% speed per level
+            const speed = baseSpeed * (1 + (currentLevel - 1) * 0.2) * baseScale; // Scale physical speed to screen
             const angle = Math.random() * Math.PI * 2;
 
             enemies.push({
@@ -815,7 +808,7 @@
                         const playerArea = Math.PI * player.radius * player.radius;
                         const enemyArea = Math.PI * enemy.radius * enemy.radius;
                         player.targetRadius = Math.sqrt((playerArea + enemyArea) / Math.PI); // Gain 100% of area
-                        player.score += Math.floor(enemy.radius);
+                        player.score += Math.floor(enemy.radius / baseScale);
                         enemies.splice(i, 1);
                         updateHUD();
                     } else if (enemy.radius > player.radius * 1.05 && player.invulnerableTime <= 0) {
